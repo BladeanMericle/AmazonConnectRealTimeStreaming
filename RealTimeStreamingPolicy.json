@@ -1,0 +1,17 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "kms:Decrypt",
+                "kinesis:DescribeStream",
+                "kinesis:GetShardIterator",
+                "kinesis:GetRecords",
+                "kinesisvideo:GetDataEndpoint",
+                "kinesisvideo:GetMedia",
+            ],
+            "Resource": "*"
+        }
+    ]
+}

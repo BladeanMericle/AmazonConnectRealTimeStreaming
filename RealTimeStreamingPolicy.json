@@ -9,7 +9,7 @@
                 "kinesis:GetShardIterator",
                 "kinesis:GetRecords",
                 "kinesisvideo:GetDataEndpoint",
-                "kinesisvideo:GetMedia",
+                "kinesisvideo:GetMedia"
             ],
             "Resource": "*"
         }

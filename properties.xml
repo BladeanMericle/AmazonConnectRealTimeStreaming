@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+<comment>RealTimeStreamingの設定ファイル</comment>
+
+<!-- AWSのリージョン -->
+<entry key="regionname">ap-northeast-1</entry>
+
+<!-- Kinesis Data Streamsのストリーム名 -->
+<entry key="streamname">(Kinesis Data Streamsのストリーム名)</entry>
+
+<!-- AWS APIのの最大リトライ数 -->
+<entry key="maxretrycount">3</entry>
+
+<!-- AWS APIのリトライ間隔(ms) -->
+<entry key="retryinterval">1000</entry>
+
+<!-- GetRecordsの実行間隔(ms) -->
+<entry key="getrecordsinterval">1000</entry>
+
+<!-- 音声の保存先フォルダ -->
+<entry key="audiopath">./audio/</entry>
+
+</properties>

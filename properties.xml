@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
-<comment>RealTimeStreamingの設定ファイル</comment>
+<comment>Amazon Connect Real Time Streamingの設定ファイル</comment>
 
 <!-- AWSのリージョン -->
 <entry key="regionname">ap-northeast-1</entry>

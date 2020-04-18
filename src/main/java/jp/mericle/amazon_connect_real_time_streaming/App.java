@@ -9,6 +9,8 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import javax.swing.SwingUtilities;
+
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
@@ -103,56 +105,58 @@ public class App
                 .withCredentials(credentialsProvider)
                 .withClientConfiguration(config).build();
 
-
-        // シャードの一覧を取得します。
-        final List<Shard> shards = getShards(
-                dataStreams, streamName, maxRetryCount, retryInterval);
-        if (shards == null || shards.size() == 0)
-        {
-            return;
-        }
-
-        // 一番最初のシャードから、シャードイテレータを取得します。
-        String shardIterator = getShardIterator(
-                dataStreams, streamName, shards.get(0), maxRetryCount, retryInterval);
-        if (shardIterator == null || shardIterator.isEmpty())
-        {
-            return;
-        }
-
-        // レコードごとの処理を生成します。
-        final ObjectMapper mapper = new ObjectMapper();
-        final Consumer<Record> recordProcessing = createRecordProcessing(
-                region, credentialsProvider, config, mapper, audioPath, maxRetryCount, retryInterval);
-
-        System.out.printf("何かキーを押すと、次の読み込みで終了します。\n");
-        while (true)
-        {
-            // レコードの一覧を取得します。
-            shardIterator = getRecords(
-                    dataStreams,
-                    shardIterator,
-                    recordProcessing,
-                    maxRetryCount,
-                    retryInterval);
-            if (shardIterator == null || shardIterator.isEmpty())
+        Window window = new Window((w) -> {
+            // シャードの一覧を取得します。
+            final List<Shard> shards = getShards(
+                    dataStreams, streamName, maxRetryCount, retryInterval);
+            if (shards == null || shards.size() == 0)
             {
-                break;
+                return;
             }
 
-            try {
-                // 何か入力があるようなら終了します。
-                if (System.in.available() != 0)
+            // 一番最初のシャードから、シャードイテレータを取得します。
+            String shardIterator = getShardIterator(
+                    dataStreams, streamName, shards.get(0), maxRetryCount, retryInterval);
+            if (shardIterator == null || shardIterator.isEmpty())
+            {
+                return;
+            }
+
+            // レコードごとの処理を生成します。
+            final ObjectMapper mapper = new ObjectMapper();
+            final Consumer<Record> recordProcessing = createRecordProcessing(
+                    region, credentialsProvider, config, mapper, audioPath, maxRetryCount, retryInterval, w);
+
+            System.out.println("Kinesis Data Streamsからのデータの受信を開始します。");
+            while (true)
+            {
+                if (w.isCompleted()) {
+                    break;
+                }
+
+                // レコードの一覧を取得します。
+                shardIterator = getRecords(
+                        dataStreams,
+                        shardIterator,
+                        recordProcessing,
+                        maxRetryCount,
+                        retryInterval);
+                if (shardIterator == null || shardIterator.isEmpty())
                 {
                     break;
                 }
 
-                Thread.sleep(getRecordsInterval);
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-                break;
+                try {
+                    Thread.sleep(getRecordsInterval);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    break;
+                }
             }
-        }
+
+            System.out.println("Kinesis Data Streamsからのデータの受信を終了します。"); // これが出るのは異常系
+        });
+        SwingUtilities.invokeLater(window);
     }
 
     /**
@@ -192,7 +196,8 @@ public class App
             final ObjectMapper mapper,
             final String audioPath,
             final int maxRetryCount,
-            final int retryInterval) {
+            final int retryInterval,
+            final Window window) {
         // Kinesis Video Streamsクライアントの設定を行います。
         final AmazonKinesisVideo videoStreams = AmazonKinesisVideoClientBuilder.standard()
                 .withRegion(region)
@@ -222,7 +227,7 @@ public class App
                                     region.getName())).build();
 
                     try (InputStream payload = getMedia(videoStreamsMedia, videoStreamData, maxRetryCount, retryInterval);
-                            AudioRecordFrameProcessor frameProcessor = new AudioRecordFrameProcessor(audioPath, videoStreamData)){
+                            AudioRecordFrameProcessor frameProcessor = new AudioRecordFrameProcessor(audioPath, videoStreamData, window)){
                         if (payload == null) {
                             return;
                         }

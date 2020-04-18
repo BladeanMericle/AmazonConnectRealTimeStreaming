@@ -46,6 +46,16 @@ public class AudioRecordFrameProcessor implements FrameProcessor {
     private final VideoStreamData videoStreamData;
 
     /**
+     * ウインドウ。
+     */
+    private final Window window;
+
+    /**
+     * 問い合わせの描画パネル。
+     */
+    private final ContactPanel contactPanel;
+
+    /**
      * お客様側の出力ストリーム。
      */
     private final ByteArrayOutputStream customerStream = new ByteArrayOutputStream();
@@ -59,18 +69,31 @@ public class AudioRecordFrameProcessor implements FrameProcessor {
      * コンストラクタ。
      * @param audioPath 保存先のフォルダ
      * @param videoStreamData ストリーム情報
+     * @param window ウインドウ
      */
-    public AudioRecordFrameProcessor(final String audioPath, final VideoStreamData videoStreamData) {
+    public AudioRecordFrameProcessor(
+            final String audioPath,
+            final VideoStreamData videoStreamData,
+            final Window window) {
         if (audioPath == null || audioPath.isEmpty())
         {
             throw new IllegalArgumentException("audioPath can't set null or empty.");
         }
+
         if (videoStreamData == null) {
             throw new IllegalArgumentException("videoStreamData can't set null.");
         }
 
+        if (window == null) {
+            throw new IllegalArgumentException("window can't set null.");
+        }
+
         this.audioPath = audioPath;
         this.videoStreamData = videoStreamData;
+        this.window = window;
+
+        // 問い合わせの描画パネルを作成します。
+        contactPanel = window.addContactPanel(videoStreamData);
     }
 
     /**
@@ -109,8 +132,10 @@ public class AudioRecordFrameProcessor implements FrameProcessor {
             // トラック名でどちら側の音声なのか判別します。
             if (trackName.equals(CUSTOMER_TRACK_NAME)) {
                 customerStream.write(frameBytes);
+                contactPanel.updateCustomerFrequencySpectrum(frameBytes);
             } else if (trackName.equals(OPERATOR_TRACK_NAME)) {
                 operatorStream.write(frameBytes);
+                contactPanel.updateOperatorFrequencySpectrum(frameBytes);
             }
         } catch (IOException e) {
             throw new FrameProcessException("Failed to write audio file.", e);
@@ -153,6 +178,9 @@ public class AudioRecordFrameProcessor implements FrameProcessor {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        // 問い合わせの描画パネルを削除します。
+        window.removeContactPanel(videoStreamData);
     }
 
     /**
